@@ -9,7 +9,7 @@ use Config::Simple;
 use Getopt::Std;
 use Net::Twitter;
 
-my $t = localtime;
+my $t = gmtime;
 say "$0 running at $t\n";
 
 our $opt_c;

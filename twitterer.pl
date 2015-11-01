@@ -43,8 +43,9 @@ my $latest_s = $tw->home_timeline( {
 } );
 
 my $latest_id = $latest_s->[0]{id} // 0;
-
 say "Latest ID: $latest_id";
+
+say "Search query: [" . $search->{query} . "]";
 
 my $r = $tw->search( {
   q => $search->{query},

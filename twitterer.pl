@@ -9,8 +9,12 @@ use Config::Simple;
 use Getopt::Std;
 use Net::Twitter;
 
+use lib qw(
+    /home/ardavey/perl5/lib/perl5
+);
+
 my $t = gmtime;
-say "$0 running at $t\n";
+say "$0 running at $t";
 
 our $opt_c;
 getopts( 'c:' );
@@ -26,6 +30,7 @@ my $search = $cfg->param( -block => 'SEARCH' );
 
 my $tw = Net::Twitter->new(
   traits => [ qw( API::RESTv1_1 ) ],
+  ssl => 1,
   consumer_key => $creds->{consumer_key},
   consumer_secret => $creds->{consumer_secret},
   access_token => $creds->{access_token},
@@ -48,9 +53,14 @@ my $r = $tw->search( {
   since_id => $latest_id,
 } );
 
-foreach my $s ( reverse @{ $r->{statuses} } ) {
+my @statuses = reverse @{ $r->{statuses} };
+
+if ( scalar @statuses ) {
+  foreach my $s ( @statuses ) {
   say "Retweeting id $s->{id}";
-  eval {
-    $tw->retweet( { id => $s->{id} } );
-  };
+      $tw->retweet( { id => $s->{id} } );
+  }
+}
+else {
+  say "Nothing to retweet.";
 }

@@ -58,8 +58,11 @@ my @statuses = reverse @{ $r->{statuses} };
 
 if ( scalar @statuses ) {
   foreach my $s ( @statuses ) {
-  say "Retweeting id $s->{id}";
+    say "Retweeting id $s->{id}";
+    # Bit of a hack here, but if a tweet has already been retweeted it throws a fatal error
+    eval {
       $tw->retweet( { id => $s->{id} } );
+    };
   }
 }
 else {

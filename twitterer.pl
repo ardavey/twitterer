@@ -9,8 +9,10 @@ use Config::Simple;
 use Getopt::Std;
 use Net::Twitter;
 
+use Data::Dumper;
+
 use lib qw(
-    /home/ardavey/perl5/lib/perl5
+  /home/ardavey/perl5/lib/perl5
 );
 
 my $t = gmtime;
@@ -48,7 +50,7 @@ say "Latest ID: $latest_id";
 say "Search query: [" . $search->{query} . "]";
 
 my $r = $tw->search( {
-  q => $search->{query},
+  q => "\"$search->{query}\"",
   count => $search->{count},
   result_type => 'recent',
   since_id => $latest_id,
@@ -63,6 +65,10 @@ if ( scalar @statuses ) {
     eval {
       $tw->retweet( { id => $s->{id} } );
     };
+    
+    if ( $@ ) {
+      say "RT error: $@";
+    }
   }
 }
 else {

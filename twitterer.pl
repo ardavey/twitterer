@@ -58,8 +58,12 @@ my $r = $tw->search( {
 
 my @statuses = reverse @{ $r->{statuses} };
 
+say "Search returned " . scalar @statuses . " status(es).";
+
 if ( scalar @statuses ) {
   foreach my $s ( @statuses ) {
+    # So we don't RT someone whose handle matches.  That would be silly.
+    next unless ( $s->{text} =~ /$search->{query}/i );
     say "Retweeting id $s->{id}";
     # Bit of a hack here, but if a tweet has already been retweeted it throws a fatal error
     eval {

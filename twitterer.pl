@@ -64,7 +64,7 @@ say "Search returned " . scalar @statuses . " status(es).";
 if ( scalar @statuses ) {
   STATUS: foreach my $s ( @statuses ) {
     # So we don't RT someone whose handle matches.  That would be silly.
-    next STATUS unless ( $s->{text} =~ /$search->{query}/i );
+    next STATUS if ( $s->{text} !~ /$search->{query}/i );
     
     # Attempt to avoid some of the common spammy bot tweets
     foreach my $pattern ( @$blacklist ) {

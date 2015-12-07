@@ -39,7 +39,6 @@ my $tw = Net::Twitter->new(
   access_token_secret => $creds->{access_token_secret},
 );
 
-#my $number_of_statuses = scalar @$statuss;
 my $status = $statuses->[int(rand(scalar @$statuses))];
 
 $tw->update( $status );

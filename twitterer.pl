@@ -29,6 +29,7 @@ my $cfg = new Config::Simple( $opt_c ) or die 'Failed to load config';
 
 my $creds = $cfg->param( -block => 'AUTHENTICATION' );
 my $search = $cfg->param( -block => 'SEARCH' );
+my $blacklist = $cfg->param( 'BLACKLIST.patterns' );
 
 my $tw = Net::Twitter->new(
   traits => [ qw( API::RESTv1_1 ) ],
@@ -61,9 +62,15 @@ my @statuses = reverse @{ $r->{statuses} };
 say "Search returned " . scalar @statuses . " status(es).";
 
 if ( scalar @statuses ) {
-  foreach my $s ( @statuses ) {
+  STATUS: foreach my $s ( @statuses ) {
     # So we don't RT someone whose handle matches.  That would be silly.
-    next unless ( $s->{text} =~ /$search->{query}/i );
+    next STATUS unless ( $s->{text} =~ /$search->{query}/i );
+    
+    # Attempt to avoid some of the common spammy bot tweets
+    foreach my $pattern ( @$blacklist ) {
+      next STATUS if ( $s->{text} =~ m/$pattern/i );
+    }
+    
     say "Retweeting id $s->{id}";
     # Bit of a hack here, but if a tweet has already been retweeted it throws a fatal error
     eval {

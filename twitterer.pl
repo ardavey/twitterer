@@ -63,15 +63,29 @@ say "Search returned " . scalar @statuses . " status(es).";
 
 if ( scalar @statuses ) {
   STATUS: foreach my $s ( @statuses ) {
-    # So we don't RT someone whose handle matches.  That would be silly.
-    next STATUS if ( $s->{text} !~ /$search->{query}/i );
-    
-    # Attempt to avoid some of the common spammy bot tweets
-    foreach my $pattern ( @$blacklist ) {
-      next STATUS if ( $s->{text} =~ m/$pattern/i );
+    say "Found status $s->{id}: [$s->{text}]";
+
+    # So we don't RT someone whose handle matches.  That would be silly.    
+    if ( $s->{text} !~ /$search->{query}/i ) {
+      say "Status doesn't match search string!";
+      next STATUS;
     }
     
-    say "Retweeting id $s->{id}";
+    # Attempt to avoid some of the common spammy bot tweets
+    if ( defined $blacklist ) {
+      if ( ref( $blacklist ) eq 'ARRAY' ) {
+        foreach my $bl ( @$blacklist ) {
+          say "Checking blacklist pattern [$bl]";
+          next STATUS if ( $s->{text} =~ m/$bl/i );
+        }
+      }
+      else {
+        say "Checking blacklist pattern [$blacklist]";
+        next STATUS if ( $s->{text} =~ m/$blacklist/i );
+      }
+    }
+    
+    say "Retweeting id $s->{id}: [$s->{text}]";
     # Bit of a hack here, but if a tweet has already been retweeted it throws a fatal error
     eval {
       $tw->retweet( { id => $s->{id} } );

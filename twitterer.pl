@@ -48,16 +48,36 @@ my $latest_s = $tw->home_timeline( {
 my $latest_id = $latest_s->[0]{id} // 0;
 say "Latest ID: $latest_id";
 
-say "Search query: [" . $search->{query} . "]";
 
-my $r = $tw->search( {
-  q => "\"$search->{query}\"",
-  count => $search->{count},
-  result_type => 'recent',
-  since_id => $latest_id,
-} );
+my @statuses;
+my $r;
 
-my @statuses = reverse @{ $r->{statuses} };
+if ( ref( $search->{query} ) eq 'ARRAY' ) {
+  foreach my $s ( @{ $search->{query} } ) {
+    say "Search query: [" . $s . "]";  
+    $r = $tw->search( {
+      q => "\"$s\"",
+      count => $search->{count},
+      result_type => 'recent',
+      since_id => $latest_id,
+    } );
+    #print Dumper( $r->{statuses} );
+    push @statuses, grep { $_->{text} =~ m/$s/i } @{ $r->{statuses} };
+  }
+}
+else {
+  say "Search query: [" . $search->{query} . "]";  
+  $r = $tw->search( {
+    q => "\"$search->{query}\"",
+    count => $search->{count},
+    result_type => 'recent',
+    since_id => $latest_id,
+  } );
+  #print Dumper( $r->{statuses} );
+  push @statuses, grep { $_->{text} =~ m/$search->{query}/i } @{ $r->{statuses} };
+}
+
+@statuses = sort { $a->{id} cmp $b->{id} } @statuses;
 
 say "Search returned " . scalar @statuses . " status(es).";
 
@@ -65,12 +85,6 @@ if ( scalar @statuses ) {
   STATUS: foreach my $s ( @statuses ) {
     say "Found status $s->{id}: [$s->{text}]";
 
-    # So we don't RT someone whose handle matches.  That would be silly.    
-    if ( $s->{text} !~ /$search->{query}/i ) {
-      say "Status doesn't match search string!";
-      next STATUS;
-    }
-    
     # Attempt to avoid some of the common spammy bot tweets
     if ( defined $blacklist ) {
       if ( ref( $blacklist ) eq 'ARRAY' ) {

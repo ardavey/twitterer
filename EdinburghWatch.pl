@@ -53,7 +53,7 @@ $r = $tw->search( {
   count => 1000,
   result_type => 'recent',
   since_id => $latest_id,
-  geocode => '55.9485613,-3.2004082,6km',
+  geocode => '55.9485613,-3.2004082,10km',
 } );
 
 @statuses = sort { $a->{id} cmp $b->{id} } @{ $r->{statuses} };
@@ -65,7 +65,7 @@ if ( scalar @statuses ) {
     
     #say Dumper($s);
     
-    if ( defined $s->{in_reply_to_status_id} || $s->{text} =~ /^@/ ) {
+    if ( defined $s->{in_reply_to_user_id} || $s->{text} =~ m/^@/s ) {
       say "Skipping reply $s->{id}";
       next STATUS;
     }

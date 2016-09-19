@@ -25,9 +25,10 @@ unless ( $opt_c && -f $opt_c ) {
   die 'Config file not found';
 }
 
-my $cfg = new Config::Simple( $opt_c ) or die 'Failed to load config';
+my $c = new Config::Simple( $opt_c ) or die 'Failed to load config';
 
-my $creds = $cfg->param( -block => 'AUTHENTICATION' );
+my $creds = $c->param( -block => 'AUTHENTICATION' );
+my $cfg = $c->param( -block => 'CONFIG' );
 
 my $tw = Net::Twitter->new(
   traits => [ qw( API::RESTv1_1 ) ],
@@ -50,7 +51,7 @@ my @statuses;
 my $r;
 
 $r = $tw->search( {
-  count => 1000,
+  count => 50,
   result_type => 'recent',
   since_id => $latest_id,
   geocode => '55.9485613,-3.2004082,10km',
@@ -62,13 +63,20 @@ say "Search returned " . scalar @statuses . " status(es).";
 
 if ( scalar @statuses ) {
   STATUS: foreach my $s ( @statuses ) {
-    
+        
     #say Dumper($s);
+    my $un = $s->{user}{screen_name};
+    my $unre = qr/^$un$/;
+    if ( scalar grep { /$unre/i } @{ $cfg->{blacklist} } ) {
+      say "Skipping blacklisted user $un";
+      next STATUS;
+    }
     
     if ( defined $s->{in_reply_to_user_id} || $s->{text} =~ m/^@/s ) {
       say "Skipping reply $s->{id}";
       next STATUS;
     }
+
     say "Retweeting id $s->{id}";
     # Bit of a hack here, but if a tweet has already been retweeted it throws a fatal error
     eval {

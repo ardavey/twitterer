@@ -72,7 +72,7 @@ if ( scalar @statuses ) {
       next STATUS;
     }
     
-    if ( defined $s->{in_reply_to_user_id} || $s->{text} =~ m/^@/s ) {
+    if ( $s->{in_reply_to_user_id} || $s->{in_reply_to_status_id} || $s->{text} =~ m/^@/s ) {
       say "Skipping reply $s->{id}";
       next STATUS;
     }

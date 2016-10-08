@@ -51,7 +51,7 @@ my @statuses;
 my $r;
 
 $r = $tw->search( {
-  count => 50,
+  count => 5,
   result_type => 'recent',
   since_id => $latest_id,
   geocode => '55.9485613,-3.2004082,10km',
@@ -65,11 +65,11 @@ if ( scalar @statuses ) {
   STATUS: foreach my $s ( @statuses ) {
         
     #say Dumper($s);
-    my $un = $s->{user}{screen_name};
-    my $unre = qr/^$un$/;
-    if ( scalar grep { /$unre/i } @{ $cfg->{blacklist} } ) {
-      say "Skipping blacklisted user $un";
-      next STATUS;
+    foreach my $un ( @{ $cfg->{blacklist} } ) {
+      if ( lc( $s->{user}{screen_name} ) eq lc( $un ) ) {
+        say "Skipping blacklisted user $un";
+        next STATUS;
+      }
     }
     
     if ( $s->{in_reply_to_user_id} || $s->{in_reply_to_status_id} || $s->{text} =~ m/^@/s ) {

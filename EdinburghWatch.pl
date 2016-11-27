@@ -5,8 +5,8 @@ use warnings;
 
 use 5.010;
 
-use Config::Simple;
 use Getopt::Std;
+use File::Slurp;
 use Net::Twitter;
 
 use Data::Dumper;
@@ -21,22 +21,15 @@ say "$0 running at $t";
 our $opt_c;
 getopts( 'c:' );
 
-unless ( $opt_c && -f $opt_c ) {
-  die 'Config file not found';
-}
-
-my $c = new Config::Simple( $opt_c ) or die 'Failed to load config';
-
-my $creds = $c->param( -block => 'AUTHENTICATION' );
-my $cfg = $c->param( -block => 'CONFIG' );
+my $c = read_config( $opt_c ) or die "Failed to load config: $!";
 
 my $tw = Net::Twitter->new(
   traits => [ qw( API::RESTv1_1 ) ],
   ssl => 1,
-  consumer_key => $creds->{consumer_key},
-  consumer_secret => $creds->{consumer_secret},
-  access_token => $creds->{access_token},
-  access_token_secret => $creds->{access_token_secret},
+  consumer_key => $c->{authentication}{consumer_key},
+  consumer_secret => $c->{authentication}{consumer_secret},
+  access_token => $c->{authentication}{access_token},
+  access_token_secret => $c->{authentication}{access_token_secret},
 );
 
 my $latest_s = $tw->home_timeline( {
@@ -65,7 +58,7 @@ if ( scalar @statuses ) {
   STATUS: foreach my $s ( @statuses ) {
         
     #say Dumper($s);
-    foreach my $un ( @{ $cfg->{blacklist} } ) {
+    foreach my $un ( @{ $c->{blacklist} } ) {
       if ( lc( $s->{user}{screen_name} ) eq lc( $un ) ) {
         say "Skipping blacklisted user $un";
         next STATUS;
@@ -90,4 +83,19 @@ if ( scalar @statuses ) {
 }
 else {
   say "Nothing to retweet.";
+}
+
+
+sub read_config {
+  my ( $file ) = @_;
+  
+  unless ( $file && -f $file ) {
+    die 'Config file not found';
+  }
+  
+  my $cfg_text = read_file( $file );
+  my $cfg = {};
+  eval $cfg_text;
+  
+  return $cfg;
 }

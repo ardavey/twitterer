@@ -69,6 +69,13 @@ if ( scalar @statuses ) {
       say "Skipping reply $s->{id}";
       next STATUS;
     }
+    
+    foreach my $phrase ( @{ $c->{banned_phrases} } ) {
+      if ( $s->{text} =~ m/$phrase/si ) {
+        say "Skipping banned phrase: $phrase";
+        next STATUS;
+      }
+    }
 
     say "Retweeting id $s->{id}";
     # Bit of a hack here, but if a tweet has already been retweeted it throws a fatal error

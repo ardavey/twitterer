@@ -64,45 +64,53 @@ if ( scalar @statuses ) {
     
     # Skip potentially sensitive content
     if ( $s->{possibly_sensitive} ) {
-      say "Skipping potentially sensitive content in $s->{id}";
+      say "Skipping potentially sensitive content ($s->{id})";
       next STATUS;
     }
     
     # Skip if it's not flagged as English
     if ( $s->{lang} ne 'en' ) {
-      say "Skipping non-English tweet: $s->{id}";
+      say "Skipping non-English tweet ($s->{id})";
       next STATUS;
     }
     
     # Skip if the tweet looks like a RT
-    if ( $s->{retweeted} || $s->{text} =~ m/^RT[: ]/ ) {
-      say "Skipping RT $s->{id}";
+    if ( $s->{is_quote_status} || $s->{text} =~ m/^RT[: ]/ ) {
+      say "Skipping RT ($s->{id})";
       next STATUS;
     }
     
     # Skip if the tweet looks like a reply
     if ( $s->{in_reply_to_user_id} || $s->{in_reply_to_status_id} || $s->{text} =~ m/^@/ ) {
-      say "Skipping reply $s->{id}";
+      say "Skipping reply ($s->{id})";
       next STATUS;
     }
     
     # Skip if the user is on the naughty list
-    if ( grep { /$s->{user}{screen_name}/i } @{ $c->{user_blacklist} } ) {
-      say "Skipping blacklisted user $s->{user}{screen_name}";
+    if ( grep { /^$s->{user}{screen_name}$/i } @{ $c->{user_blacklist} } ) {
+      say "Skipping blacklisted user $s->{user}{screen_name} ($s->{id})";
       next STATUS;
     }
     
+    # Skip tweets with sources on the banned list
+    foreach my $source ( @{ $c->{source_blacklist} } ) {
+      if ( $s->{source} =~ m/$source/si ) {
+        say "Skipping banned source '$source' ($s->{id})";
+        next STATUS;
+      }
+    }
+    
     # Skip tweets with phrases on the banned list
-    foreach my $phrase ( @{ $c->{banned_phrases} } ) {
+    foreach my $phrase ( @{ $c->{phrase_blacklist} } ) {
       if ( $s->{text} =~ m/$phrase/si ) {
-        say "Skipping banned phrase: $phrase";
+        say "Skipping banned phrase '$phrase' ($s->{id})";
         next STATUS;
       }
     }
 
-    print "ID $s->{id}: ";
+    say "RT-ing $s->{id}: $s->{text}";
     
-    # Bit of a hack here, but if a tweet has already been retweeted it throws a fatal error
+    # Bit of a hack here, but if a status has already been retweeted it throws a fatal error
     eval {
       $tw->retweet( { id => $s->{id} } );
     };
@@ -111,7 +119,6 @@ if ( scalar @statuses ) {
       say "Error: $@";
     }
     else {
-      say "Retweeted";
       $rt_count++;
     }
     

@@ -92,6 +92,12 @@ if ( scalar @statuses ) {
       next STATUS;
     }
     
+    # Skip if the user has opted out
+    if ( grep { /^$s->{user}{screen_name}$/i } @{ $c->{user_opt_out} } ) {
+      say "Skipping opted out user $s->{user}{screen_name} ($s->{id})";
+      next STATUS;
+    }
+    
     # Skip tweets with sources on the banned list
     foreach my $source ( @{ $c->{source_blacklist} } ) {
       if ( $s->{source} =~ m/$source/si ) {

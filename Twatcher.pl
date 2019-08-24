@@ -9,6 +9,7 @@ use Getopt::Std;
 use File::Slurp;
 use Net::Twitter;
 use List::Util qw( shuffle );
+use Time::Piece;
 
 use Data::Dumper;
 $Data::Dumper::Sortkeys = 1;
@@ -39,10 +40,9 @@ my $tw = Net::Twitter->new(
 
 if ( $opt_s ) {
   foreach my $s ( @{ $c->{spotlight} } ) {
-    # Bit of a hack here, but if a status has already been retweeted it throws a fatal error
-    eval {
-      $tw->retweet( { id => $s } );
-    };
+    my $t = localtime;
+    my $st = $tw->show_status( $s );
+    $tw->update( "Check this out! #ad\nhttps://twitter.com/i/status/" . $st->{id} . "#" . $t->epoch );
   }
 }
 else {
